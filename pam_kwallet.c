@@ -27,6 +27,7 @@
 #define PAM_SM_PASSWORD
 #define PAM_SM_SESSION
 #define PAM_SM_AUTH
+#include <fcntl.h>
 #include <pwd.h>
 #include <sys/stat.h>
 #include <sys/syslog.h>
@@ -383,6 +384,11 @@ static void execute_kwallet(pam_handle_t *pamh, struct passwd *userInfo, int toW
 #else
     char* extraArg = "--nofork";
 #endif
+
+    //Disable kwalletd's stdout
+    int nullfd = open("/dev/null", O_WRONLY);
+    dup2(nullfd, STDOUT_FILENO); //Ignore failure
+
     char *args[] = {strdup(kwalletd), "--pam-login", pipeInt, sockIn, extraArg, NULL};
     execve(args[0], args, pam_getenvlist(pamh));
     syslog(LOG_ERR, "%s: could not execute kwalletd from %s", logPrefix, kwalletd);
